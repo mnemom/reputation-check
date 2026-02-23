@@ -142,4 +142,4 @@ For a detailed explanation of how scores are computed, see the [Mnemom Methodolo
 
 ## License
 
-MIT
+Apache 2.0 — see [LICENSE](LICENSE).
