@@ -1,0 +1,37 @@
+name: 'Mnemom Reputation Check'
+description: 'Check an AI agent''s Mnemom Trust Score in your CI/CD pipeline'
+branding:
+  icon: 'shield'
+  color: 'blue'
+inputs:
+  agent-id:
+    description: 'The agent ID to check reputation for'
+    required: true
+  min-score:
+    description: 'Minimum trust score required (0-1000)'
+    required: false
+    default: '0'
+  min-grade:
+    description: 'Minimum grade required (AAA, AA, A, BBB, BB, B, CCC)'
+    required: false
+    default: ''
+  api-url:
+    description: 'Mnemom API base URL'
+    required: false
+    default: 'https://api.mnemom.ai'
+  comment:
+    description: 'Post a PR comment with the trust score badge (true/false)'
+    required: false
+    default: 'false'
+outputs:
+  score:
+    description: 'The agent trust score (0-1000)'
+  grade:
+    description: 'The agent trust grade (AAA-CCC or NR)'
+  tier:
+    description: 'The agent trust tier name'
+  passed:
+    description: 'Whether the agent passed the reputation check (true/false)'
+runs:
+  using: 'node20'
+  main: 'dist/index.js'
