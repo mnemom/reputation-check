@@ -7,7 +7,7 @@ A GitHub Action that checks an AI agent's [Mnemom Trust Score](https://www.mnemo
 ## Quick Start
 
 ```yaml
-- uses: mnemom/reputation-check@v1
+- uses: mnemom/reputation-check@v0.4.0
   with:
     agent-id: 'your-agent-id'
     min-score: '600'
@@ -45,7 +45,7 @@ jobs:
   check:
     runs-on: ubuntu-latest
     steps:
-      - uses: mnemom/reputation-check@v1
+      - uses: mnemom/reputation-check@v0.4.0
         with:
           agent-id: 'agent_abc123'
           min-score: '500'
@@ -56,7 +56,7 @@ jobs:
 Require a minimum grade of A before deploying:
 
 ```yaml
-- uses: mnemom/reputation-check@v1
+- uses: mnemom/reputation-check@v0.4.0
   with:
     agent-id: 'agent_abc123'
     min-grade: 'A'
@@ -75,7 +75,7 @@ jobs:
     permissions:
       pull-requests: write
     steps:
-      - uses: mnemom/reputation-check@v1
+      - uses: mnemom/reputation-check@v0.4.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
@@ -101,7 +101,7 @@ jobs:
           - agent_def456
           - agent_ghi789
     steps:
-      - uses: mnemom/reputation-check@v1
+      - uses: mnemom/reputation-check@v0.4.0
         with:
           agent-id: ${{ matrix.agent }}
           min-score: '600'
@@ -112,7 +112,7 @@ jobs:
 Access the trust score in later steps:
 
 ```yaml
-- uses: mnemom/reputation-check@v1
+- uses: mnemom/reputation-check@v0.4.0
   id: trust
   with:
     agent-id: 'agent_abc123'
