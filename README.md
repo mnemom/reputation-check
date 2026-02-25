@@ -17,20 +17,24 @@ A GitHub Action that checks an AI agent's [Mnemom Trust Score](https://www.mnemo
 
 | Input | Description | Required | Default |
 |-------|-------------|----------|---------|
-| `agent-id` | The agent ID to check reputation for | Yes | |
+| `agent-id` | The agent ID to check reputation for | No* | |
+| `team-id` | The team ID to check team reputation for | No* | |
 | `min-score` | Minimum trust score required (0-1000) | No | `0` |
 | `min-grade` | Minimum grade required (AAA, AA, A, BBB, BB, B, CCC) | No | |
 | `api-url` | Mnemom API base URL | No | `https://api.mnemom.ai` |
 | `comment` | Post a PR comment with the trust score badge (true/false) | No | `false` |
 
+*Exactly one of `agent-id` or `team-id` is required.
+
 ## Outputs
 
 | Output | Description |
 |--------|-------------|
-| `score` | The agent trust score (0-1000) |
-| `grade` | The agent trust grade (AAA-CCC or NR) |
-| `tier` | The agent trust tier name |
-| `passed` | Whether the agent passed the reputation check (true/false) |
+| `score` | The trust score (0-1000) |
+| `grade` | The trust grade (AAA-CCC or NR) |
+| `tier` | The trust tier name |
+| `passed` | Whether the entity passed the reputation check (true/false) |
+| `entity-type` | Whether this checked an `agent` or `team` |
 
 ## Examples
 
@@ -122,6 +126,70 @@ Access the trust score in later steps:
 - if: steps.trust.outputs.grade == 'AAA'
   run: echo "Top-tier agent!"
 ```
+
+## Team Reputation
+
+Check a team's collective reputation score instead of an individual agent:
+
+### Basic Team Check
+
+```yaml
+- uses: mnemom/reputation-check@v0.4.0
+  with:
+    team-id: 'team_abc123'
+    min-score: '600'
+```
+
+### Team Grade Gate
+
+Require a minimum team grade before deploying multi-agent systems:
+
+```yaml
+name: Team Trust Gate
+on: [push]
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: mnemom/reputation-check@v0.4.0
+        id: team-trust
+        with:
+          team-id: 'team_abc123'
+          min-grade: 'A'
+
+      - if: steps.team-trust.outputs.passed == 'true'
+        run: echo "Team ${{ steps.team-trust.outputs.entity-type }} scored ${{ steps.team-trust.outputs.score }}"
+```
+
+### Team + Individual Checks
+
+Check both the team and individual agents in the same workflow:
+
+```yaml
+name: Full Trust Gate
+on: [push]
+jobs:
+  check-team:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: mnemom/reputation-check@v0.4.0
+        with:
+          team-id: 'team_abc123'
+          min-score: '600'
+
+  check-agents:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        agent: [agent_1, agent_2, agent_3]
+    steps:
+      - uses: mnemom/reputation-check@v0.4.0
+        with:
+          agent-id: ${{ matrix.agent }}
+          min-score: '500'
+```
+
+> **Note:** Team reputation uses a 5-component model (coherence history, member quality, operational record, structural stability, assessment density). Teams need at least 10 assessments before receiving a score. See the [Team Reputation Methodology](https://www.mnemom.ai/methodology?tab=team-reputation) for details.
 
 ## Grades and Scoring
 

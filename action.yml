@@ -6,7 +6,12 @@ branding:
 inputs:
   agent-id:
     description: 'The agent ID to check reputation for'
-    required: true
+    required: false
+    default: ''
+  team-id:
+    description: 'The team ID to check reputation for'
+    required: false
+    default: ''
   min-score:
     description: 'Minimum trust score required (0-1000)'
     required: false
@@ -32,6 +37,8 @@ outputs:
     description: 'The agent trust tier name'
   passed:
     description: 'Whether the agent passed the reputation check (true/false)'
+  entity-type:
+    description: 'Whether this checked an agent or team'
 runs:
   using: 'node20'
   main: 'dist/index.js'

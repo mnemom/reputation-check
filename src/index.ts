@@ -14,17 +14,40 @@ interface ReputationResponse {
   computed_at: string;
 }
 
+interface TeamReputationResponse {
+  team_id: string;
+  team_name: string;
+  score: number;
+  grade: string;
+  confidence: string;
+  is_eligible: boolean;
+  computed_at: string;
+}
+
 async function run(): Promise<void> {
   try {
-    const agentId = core.getInput('agent-id', { required: true });
+    const agentId = core.getInput('agent-id') || '';
+    const teamId = core.getInput('team-id') || '';
     const minScore = parseInt(core.getInput('min-score') || '0', 10);
     const minGrade = core.getInput('min-grade') || '';
     const apiUrl = core.getInput('api-url') || 'https://api.mnemom.ai';
     const shouldComment = core.getInput('comment') === 'true';
 
-    core.info(`Checking reputation for agent: ${agentId}`);
+    if ((!agentId && !teamId) || (agentId && teamId)) {
+      core.setFailed('Exactly one of agent-id or team-id must be provided');
+      return;
+    }
 
-    const url = `${apiUrl}/v1/reputation/${encodeURIComponent(agentId)}`;
+    const isTeam = !!teamId;
+    const entityId = isTeam ? teamId : agentId;
+    const entityLabel = isTeam ? 'Team' : 'Agent';
+
+    core.setOutput('entity-type', isTeam ? 'team' : 'agent');
+    core.info(`Checking reputation for ${entityLabel.toLowerCase()}: ${entityId}`);
+
+    const url = isTeam
+      ? `${apiUrl}/v1/teams/${encodeURIComponent(teamId)}/reputation`
+      : `${apiUrl}/v1/reputation/${encodeURIComponent(agentId)}`;
     const response = await fetch(url);
 
     if (!response.ok) {
@@ -33,18 +56,18 @@ async function run(): Promise<void> {
         core.setOutput('grade', 'NR');
         core.setOutput('tier', 'Not Rated');
         core.setOutput('passed', 'false');
-        core.setFailed(`Agent ${agentId} has no reputation score`);
+        core.setFailed(`${entityLabel} ${entityId} has no reputation score`);
         return;
       }
       core.setFailed(`API error: ${response.status} ${response.statusText}`);
       return;
     }
 
-    const data = (await response.json()) as ReputationResponse;
+    const data = (await response.json()) as ReputationResponse | TeamReputationResponse;
 
     core.setOutput('score', data.score.toString());
     core.setOutput('grade', data.grade);
-    core.setOutput('tier', data.tier);
+    core.setOutput('tier', 'tier' in data ? data.tier : '');
 
     let passed = true;
     const reasons: string[] = [];
@@ -70,8 +93,12 @@ async function run(): Promise<void> {
         const token = process.env.GITHUB_TOKEN;
         if (token) {
           const octokit = github.getOctokit(token);
-          const badgeUrl = `${apiUrl}/v1/reputation/${encodeURIComponent(agentId)}/badge.svg?variant=score_grade`;
-          const verifyUrl = `https://www.mnemom.ai/reputation/${encodeURIComponent(agentId)}`;
+          const badgeUrl = isTeam
+            ? `${apiUrl}/v1/teams/${encodeURIComponent(teamId)}/reputation/badge.svg?variant=score_grade`
+            : `${apiUrl}/v1/reputation/${encodeURIComponent(agentId)}/badge.svg?variant=score_grade`;
+          const verifyUrl = isTeam
+            ? `https://www.mnemom.ai/teams/${encodeURIComponent(teamId)}/reputation`
+            : `https://www.mnemom.ai/reputation/${encodeURIComponent(agentId)}`;
           const body = [
             `## Mnemom Trust Score`,
             ``,
@@ -79,10 +106,11 @@ async function run(): Promise<void> {
             ``,
             `| Metric | Value |`,
             `|--------|-------|`,
+            `| Entity | ${entityLabel} |`,
             `| Score | ${data.score} |`,
             `| Grade | ${data.grade} |`,
-            `| Tier | ${data.tier} |`,
-            `| Status | ${passed ? '✅ Passed' : '❌ Failed'} |`,
+            ...('tier' in data ? [`| Tier | ${data.tier} |`] : []),
+            `| Status | ${passed ? '\u2705 Passed' : '\u274C Failed'} |`,
             reasons.length > 0 ? `| Reason | ${reasons.join(', ')} |` : '',
             ``,
             `[View Full Report](${verifyUrl})`,
