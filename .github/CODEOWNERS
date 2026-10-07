@@ -1,6 +1,6 @@
 # Default owner for all files
-* @alexgarden
+* @alexgarden-mnemom
 
 # Critical paths get extra scrutiny
-src/ @alexgarden
-.github/workflows/ @alexgarden
+src/ @alexgarden-mnemom
+.github/workflows/ @alexgarden-mnemom
